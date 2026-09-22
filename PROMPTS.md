@@ -325,8 +325,11 @@ AI's diff (verbatim, from a repo-aware subagent that read the file first):
 
 ### (Optional) Part C — Fix a SpotBugs finding with AI
 
-- Skipped / _TBD_ (SpotBugs not installed in this environment; PMD/SpotBugs
-  are deferred to Modules 5/8 per the starter README).
+- Skipped: SpotBugs is not wired into this starter's Makefile (there's no
+  `spotbugs` target), and the starter `README.md` says explicitly that
+  PMD/SpotBugs "are not wired in here — they show up in Modules 5/8." No
+  SpotBugs report exists to pick a finding from, so this optional part
+  doesn't apply to this starter.
 
 ### Part D — Reflect
 
