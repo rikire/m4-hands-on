@@ -320,7 +320,7 @@ AI's diff (verbatim, from a repo-aware subagent that read the file first):
 - Cyclomatic complexity on `quote`: ~18 → ~14 (the loyalty-tier cascade,
   3 if/else-if branches plus the `loyaltyRate > 0.0` guard, moved out);
   `applyLoyaltyDiscount` now carries that complexity on its own at ~5.
-- Commit hash (atomic): `82fb223` — "Extract loyalty-tier discount into
+- Commit hash (atomic): `f9a7e08` — "Extract loyalty-tier discount into
   applyLoyaltyDiscount".
 
 ### (Optional) Part C — Fix a SpotBugs finding with AI
@@ -330,7 +330,14 @@ AI's diff (verbatim, from a repo-aware subagent that read the file first):
 
 ### Part D — Reflect
 
-- Cyclomatic complexity drop: _TBD_
-- Did the SpotBugs fix require understanding the rule, or was the AI's
-  explanation enough? _TBD_
-- One refactor the AI proposed but was rejected, and why: _TBD_
+- **Complexity drop:** `quote` went from ~18 to ~14 (manual count); the
+  ~5 points removed now live in `applyLoyaltyDiscount`, isolated and
+  independently testable.
+- **SpotBugs:** not applicable — not wired into this starter's Makefile
+  (deferred to Modules 5/8 per README), so no rule to understand.
+- **Rejected refactor:** the AI also suggested renaming the promo-code and
+  region-tax cascades into named lookups (e.g. `taxRateForRegion`) and
+  turning the subtotal loop into a filter+map+reduce pipeline. Rejected
+  both — they don't reduce complexity (same branch count, just moved or
+  restyled) and would touch more of the file for a purely cosmetic gain,
+  which isn't worth the extra diff to review for this exercise.
