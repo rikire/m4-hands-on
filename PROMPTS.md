@@ -157,10 +157,10 @@ other test path is affected.
 
 - `make test` result after applying: all 10 tests pass, including
   `quotesDiscountForLoyalCustomer`. No regressions.
-- Commit: `fd52e2b` — "Fix off-by-one in loyalty tier-3 boundary check"
+- Commit: `e366ebc` — "Fix off-by-one in loyalty tier-3 boundary check"
   (message drafted by AI, "why" line added by hand; committed with `-m`
-  instead of interactive `-e` since this session has no terminal editor —
-  see note below).
+  instead of interactive `-e` since this session has no terminal editor
+  to review in).
 
 ### Part C — Reflect
 
