@@ -398,15 +398,21 @@ null-tolerant version instead:
   EI — once the field itself is unmodifiable/copied, returning it via the
   record's accessor is no longer flagged).
 - `make test` after applying: all 10 tests pass, no regressions.
-- Commit: `74a3536` — "Fix SpotBugs EI/EI2: defensively copy Order.lines".
+- Commit: `f23908e` — "Fix SpotBugs EI/EI2: defensively copy Order.lines".
 
 ### Part D — Reflect
 
 - **Complexity drop:** `quote` went from ~18 to ~14 (manual count); the
   ~5 points removed now live in `applyLoyaltyDiscount`, isolated and
   independently testable.
-- **SpotBugs:** not applicable — not wired into this starter's Makefile
-  (deferred to Modules 5/8 per README), so no rule to understand.
+- **SpotBugs:** the AI's explanation of *what* EI2 requires (defensive
+  copy) was enough to see the shape of the fix, but not enough to trust
+  its diff blindly — understanding *why* (that `PriceEngine.quote`
+  already special-cases `lines == null`) is what caught that
+  `List.copyOf(lines)` alone would swap a documented
+  `IllegalArgumentException` path for an undocumented NPE. The rule's
+  explanation gets you 90% there; the last 10% needed reading the rest
+  of the codebase, not just the one file being patched.
 - **Rejected refactor:** the AI also suggested renaming the promo-code and
   region-tax cascades into named lookups (e.g. `taxRateForRegion`) and
   turning the subtotal loop into a filter+map+reduce pipeline. Rejected
