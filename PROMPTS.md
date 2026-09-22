@@ -186,9 +186,14 @@ other test path is affected.
 
 ### Setup
 
-- PMD/SpotBugs are **not** wired into this starter's Makefile (per
-  `README.md`: "PMD/SpotBugs are not wired in here (they show up in
-  Modules 5/8)"). No PMD/SpotBugs run — deferred to later modules.
+- PMD is **not** wired into this starter's Makefile (per `README.md`:
+  "PMD/SpotBugs are not wired in here (they show up in Modules 5/8)") and
+  stays that way — out of scope here.
+- SpotBugs **was** added: `make spotbugs` now downloads the SpotBugs
+  4.8.6 standalone distribution into `libs/spotbugs` (gitignored, same
+  pattern as `libs/junit.jar`) and runs it against the compiled `src/`
+  classes. Added because the assignment's optional Part C needs a real
+  report to pick a finding from, and the starter genuinely had none.
 - Cyclomatic complexity of `quote`: README says "roughly 14"; the AI's
   own count (Part A below) came out at ~19-20 counting every branch
   including the compound `||` guard and the `&&` in the VIP20 check. Manual
@@ -325,11 +330,75 @@ AI's diff (verbatim, from a repo-aware subagent that read the file first):
 
 ### (Optional) Part C — Fix a SpotBugs finding with AI
 
-- Skipped: SpotBugs is not wired into this starter's Makefile (there's no
-  `spotbugs` target), and the starter `README.md` says explicitly that
-  PMD/SpotBugs "are not wired in here — they show up in Modules 5/8." No
-  SpotBugs report exists to pick a finding from, so this optional part
-  doesn't apply to this starter.
+Added a `spotbugs` target to the `Makefile` (downloads the standalone
+4.8.6 distribution into `libs/spotbugs`, gitignored) since the starter
+had none. `make spotbugs` on the pre-fix code reported two findings on
+`Order.java`:
+
+```
+M V EI2: new Order(long, List, boolean, String) may expose internal representation by storing an externally mutable object into lines  At Order.java:[line 4]
+M V EI: Order.lines() may expose internal representation by returning lines  At Order.java:[line 4]
+```
+
+Picked **EI2** and used the prompt from the PDF:
+
+> SpotBugs reports the finding [RULE_NAME] on the following code. Explain
+> what the rule requires and show the smallest patch that satisfies it
+> without changing behaviour. Show the diff.
+
+AI's reply (verbatim, from a repo-aware subagent):
+
+> `EI_EXPOSE_REP2` fires when a constructor stores a reference to a
+> caller-supplied, externally mutable object directly into a field,
+> instead of copying it. Because a Java record's implicit canonical
+> constructor does exactly `this.lines = lines;`, the record and the
+> caller end up aliasing the same `List` instance... SpotBugs wants the
+> constructor to defensively copy the input into a new, ideally
+> unmodifiable, collection before storing it.
+>
+> **Caveat:** `List.copyOf` throws `NullPointerException` if `lines` is
+> `null`... If passing `null` for `lines` is a case this codebase relies
+> on, that's a small behavior change.
+
+Proposed diff (verbatim):
+
+```diff
+--- a/src/Order.java
++++ b/src/Order.java
+@@ -3,5 +3,9 @@
+ public record Order(long id, List<Line> lines, boolean expedited,
+                     String promoCode) {
+ 
++    public Order {
++        lines = List.copyOf(lines);
++    }
++
+     public record Line(String sku, int qty, Money unit) {}
+ }
+```
+
+**Manual review caught the AI's own caveat mattering in practice:**
+`PriceEngine.quote` has `order.lines() == null` as an explicit guard
+(`src/PriceEngine.java:15`) that throws `IllegalArgumentException`. No
+test exercises `new Order(id, null, ...)` directly, so `make test` would
+have passed either way — but applying `List.copyOf` verbatim would have
+turned that guarded, documented case into an unguarded
+`NullPointerException` at construction time instead, a real behaviour
+change the AI itself flagged but that I'd have missed if I'd just applied
+the diff without checking it against the rest of the codebase. Applied a
+null-tolerant version instead:
+
+```diff
++    public Order {
++        lines = (lines == null) ? null : List.copyOf(lines);
++    }
+```
+
+- `make spotbugs` after applying: **zero findings** (fixes both EI2 and
+  EI — once the field itself is unmodifiable/copied, returning it via the
+  record's accessor is no longer flagged).
+- `make test` after applying: all 10 tests pass, no regressions.
+- Commit: `74a3536` — "Fix SpotBugs EI/EI2: defensively copy Order.lines".
 
 ### Part D — Reflect
 
